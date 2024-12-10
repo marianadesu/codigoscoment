@@ -1,11 +1,4 @@
 function [txcoded] = ch_coder(txcbs, F, bgn)
-% Função para realizar codificação LDPC usando parâmetros específicos
-% Entradas:
-% - txcbs: segmentos do bloco de código a serem codificados
-% - F: número de bits de preenchimento (fillers) a serem adicionados
-% - bgn: base graph number, parâmetro que determina qual grafo LDPC usar
-% Saída:
-% - txcoded: bloco codificado após a remoção dos bits de preenchimento
 
     % Gera os bits de preenchimento (fillers), que são -1
     fillers = -1 * ones(F, 1);
