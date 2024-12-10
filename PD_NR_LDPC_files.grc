@@ -1,0 +1,396 @@
+options:
+  parameters:
+    author: "C\xEDntia"
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: NR_LDPC_files
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: NR_LDPC_files
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: mod
+  id: variable
+  parameters:
+    comment: ''
+    value: float(4)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [456, 8.0]
+    rotation: 0
+    state: true
+- name: num_bits
+  id: variable
+  parameters:
+    comment: ''
+    value: int(2560)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [344, 8.0]
+    rotation: 0
+    state: true
+- name: num_sym
+  id: variable
+  parameters:
+    comment: ''
+    value: int(12800/np.log2(mod))
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [544, 8.0]
+    rotation: 0
+    state: true
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '100000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [224, 8.0]
+    rotation: 0
+    state: enabled
+- name: analog_random_source_x_0_0
+  id: analog_random_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    max: '2'
+    maxoutbuf: '0'
+    min: '0'
+    minoutbuf: '0'
+    num_samps: num_bits
+    repeat: 'False'
+    type: byte
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [32, 184.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: Tx_QPSK_ldpc
+    type: complex
+    unbuffered: 'True'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1144, 196.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: original_msg_ldpc
+    type: byte
+    unbuffered: 'True'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 284.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0_1
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: coded_msg_ldpc
+    type: byte
+    unbuffered: 'True'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [848, 284.0]
+    rotation: 0
+    state: enabled
+- name: blocks_throttle_0_0
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: samp_rate
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 220.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_1_0
+  id: epy_block
+  parameters:
+    F: '0'
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      import matlab.engine\nfrom gnuradio import gr\n\nclass blk(gr.basic_block):\n\
+      \    def __init__(self, F=0.0, bgn=2.0):        \n        self.F = F\n     \
+      \   self.bgn = bgn\n        \n        self.coded_message = None\n        self.sent_count\
+      \ = 0\n\n        gr.basic_block.__init__(self,\n            name=\"Channel Coding\
+      \ (MATLAB)\",\n            in_sig=[np.byte],\n            out_sig=[np.byte])\n\
+      \n        self.eng = matlab.engine.start_matlab()\n        self.eng.cd(r\"G:\\\
+      Meu Drive\\UFRGS\\PD\\MATLABcodes\\MATLABcoder\")\n\n    def encode(self, message):\n\
+      \        message = np.reshape(message,(-1,1))\n        message = matlab.int8(message)\n\
+      \        txcoded = self.eng.ch_coder(message, self.F, self.bgn)\n        txcoded\
+      \ = np.asarray(txcoded, dtype=np.byte).reshape(-1)\n        return txcoded\n\
+      \n    def general_work(self, input_items, output_items):\n        #buffer references\n\
+      \        print('====== Coding ======')\n\n        in0 = input_items[0]\n   \
+      \     out = output_items[0]\n\n        print(f'bits in: {in0[:10]}')\n\n   \
+      \     # Se n\xE3o tem mensagem pra enviar, ou se terminou de enviar a mensagem\n\
+      \        if self.sent_count==0:\n            # Coda a mensagem e deixa ela na\
+      \ fila de entrada\n            self.message_len = len(in0)\n            self.coded_message\
+      \ = self.encode(in0)\n        \n        # Se ainda tem mais do que len(out)\
+      \ bits pra enviar\n        if self.sent_count + len(out) < len(self.coded_message):\n\
+      \            # envia len(out) bits\n            out[:] = self.coded_message[self.sent_count:self.sent_count+len(out)]\n\
+      \            out_len = len(out)\n        else: # Se sobram 0< bits < len(out)\
+      \ bits, (finalzinho da msg), manda os bits que sobraram\n            to_send\
+      \ = self.coded_message[self.sent_count:]\n            out_len = len(to_send)\n\
+      \            out[:out_len] = to_send\n        \n        # Vou enviar esse tanto\
+      \ de bits\n        self.sent_count+=out_len\n\n        # Se eu enviei todos\
+      \ os bits da mensagem\n        if self.sent_count >= len(self.coded_message):\n\
+      \            # Reseta a contagem de bits\n            self.sent_count = 0\n\
+      \            self.coded_message = None\n            print(f'Consuming {self.message_len}\
+      \ uncoded bits...')\n            # Tira a mensagem da fila de entrada S\xD3\
+      \ AGORA\n            self.consume(0, self.message_len)\n            self.message_len\
+      \ = 0\n        \n        print(f'bits out: {out[:10]}')\n        print(f'Sending\
+      \ {out_len} coded bits...')\n        #return produced\n        return out_len\n"
+    affinity: ''
+    alias: ''
+    bgn: '2'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Channel Coding (MATLAB)', 'blk', [('F', '0.0'), ('bgn', '2.0')],
+      [('0', 'byte', 1)], [('0', 'byte', 1)], '', ['F', 'bgn'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [520, 208.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_4_0
+  id: epy_block
+  parameters:
+    M: mod
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      import matlab.engine\nfrom gnuradio import gr\n\nclass blk(gr.basic_block):\n\
+      \    def __init__(self, M=1):  # only default arguments here\n        \"\"\"\
+      arguments to this function show up as parameters in GRC\"\"\"\n        gr.basic_block.__init__(self,\n\
+      \            name='Modulation (MATLAB)',   # will show up in GRC\n         \
+      \   in_sig=[np.byte],\n            out_sig=[np.csingle]\n        )\n       \
+      \ self.M = M\n\n        self.mod_message = None\n        self.sent_count=0\n\
+      \n        self.eng = matlab.engine.start_matlab()\n        self.eng.cd(r\"G:\\\
+      Meu Drive\\UFRGS\\PD\\MATLABcodes\\MATLABcoder\")\n\n    def modulate(self,\
+      \ message):\n        message = np.reshape(message,(-1,1))\n        message =\
+      \ matlab.int8(message)\n        txmod = self.eng.modulate(message, self.M)\n\
+      \        txmod = np.asarray(txmod, dtype=np.csingle).reshape(-1)\n        return\
+      \ txmod\n\n    def general_work(self, input_items, output_items):\n        #buffer\
+      \ references\n        print('====== Modulating ======')\n        in0 = input_items[0]\n\
+      \        out = output_items[0]\n\n        if self.sent_count==0:\n         \
+      \   self.message_len = len(in0)\n            #self.mod_message = self.modulate(in0)\n\
+      \            self.mod_message = self.modulate(np.reshape(in0,(-1,1)))\n    \
+      \    \n        if self.sent_count + len(out) < len(self.mod_message):\n    \
+      \        out[:] = self.mod_message[self.sent_count:self.sent_count+len(out)]\n\
+      \            out_len = len(out)\n        else:\n            to_send = self.mod_message[self.sent_count:]\n\
+      \            out_len = len(to_send)\n            out[:out_len] = to_send\n \
+      \       \n        self.sent_count+=out_len\n\n        if self.sent_count >=\
+      \ len(self.mod_message):\n            self.sent_count = 0\n            self.mod_message\
+      \ = None\n            print(f'Consuming {self.message_len} coded bits...')\n\
+      \            self.consume(0, self.message_len)\n            self.message_len\
+      \ = 0\n\n        print(f'Sending {out_len} modulated bits...')\n        #return\
+      \ produced\n        return out_len\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Modulation (MATLAB)', 'blk', [('M', '1')], [('0', 'byte', 1)], [('0',
+      'complex', 1)], 'arguments to this function show up as parameters in GRC', ['M'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [848, 220.0]
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import numpy as np
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [656, 28.0]
+    rotation: 0
+    state: true
+- name: qtgui_const_sink_x_0_0_0_0
+  id: qtgui_const_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    axislabels: 'True'
+    color1: '"blue"'
+    color10: '"red"'
+    color2: '"red"'
+    color3: '"red"'
+    color4: '"red"'
+    color5: '"red"'
+    color6: '"red"'
+    color7: '"red"'
+    color8: '"red"'
+    color9: '"red"'
+    comment: ''
+    grid: 'True'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '0'
+    marker10: '0'
+    marker2: '0'
+    marker3: '0'
+    marker4: '0'
+    marker5: '0'
+    marker6: '0'
+    marker7: '0'
+    marker8: '0'
+    marker9: '0'
+    name: '""'
+    nconnections: '1'
+    size: num_sym
+    style1: '0'
+    style10: '0'
+    style2: '0'
+    style3: '0'
+    style4: '0'
+    style5: '0'
+    style6: '0'
+    style7: '0'
+    style8: '0'
+    style9: '0'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    xmax: '2'
+    xmin: '-2'
+    ymax: '2'
+    ymin: '-2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1144, 312.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [analog_random_source_x_0_0, '0', blocks_file_sink_0_0, '0']
+- [analog_random_source_x_0_0, '0', blocks_throttle_0_0, '0']
+- [blocks_throttle_0_0, '0', epy_block_1_0, '0']
+- [epy_block_1_0, '0', blocks_file_sink_0_1, '0']
+- [epy_block_1_0, '0', epy_block_4_0, '0']
+- [epy_block_4_0, '0', blocks_file_sink_0, '0']
+- [epy_block_4_0, '0', qtgui_const_sink_x_0_0_0_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.4.0
